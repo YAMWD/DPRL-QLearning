@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 num_states = 9
 num_actions = 4
 Q = np.full((num_states, num_actions), 0.0)
-Q[2] = 1  # set the goal state
+# Q[2] = 1  # set the goal state
 
 # Set hyperparameters
 alpha = 0.6  # learning rate
@@ -57,8 +57,8 @@ def get_next_state(state, action):
     return next_state
 
 # Define function to get the reward
-def get_reward(state, action, next_state):
-    if next_state == 2:
+def get_reward(state):
+    if state == 2:
         reward = 1
     else:
         reward = 0
@@ -69,21 +69,24 @@ def q_learning(num_episodes, epsilon):
     steps = []
     for episode in range(num_episodes):
         state = 6  # initial state
-        done = False
         episode_steps = 0
-        while not done:
+        while True:
+            episode_steps += 1
             action = epsilon_greedy(state, epsilon)
             next_state = get_next_state(state, action)
-            reward = get_reward(state, action, next_state)
-            Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma * np.max(Q[next_state]))
-            state = next_state
-            print(next_state)
-            episode_steps += 1
+            reward = get_reward(state)
+            
             if state == 2:
+                Q[state] = 1
                 steps.append(episode_steps)
-                done = True
+                break
+            else:
+                Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma * np.max(Q[next_state]))
+                state = next_state
+                print(next_state)
     
     print(Q)
+    print(np.max(Q, axis = 1).reshape(3, 3))
     print("finished after average {} timesteps".format(np.mean(steps)))
     return np.mean(steps)
 

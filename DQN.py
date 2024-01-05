@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 num_states = 25
 num_actions = 4
 Q = np.full((num_states, num_actions), 0.0)
-Q[4] = 1  # set the goal state
+# Q[4] = 1  # set the goal state
 
 # Set hyperparameters
 alpha = 0.6  # learning rate
@@ -57,8 +57,8 @@ def get_next_state(state, action):
     return next_state
 
 # Define function to get the reward
-def get_reward(state, action, next_state):
-    if next_state == 4:
+def get_reward(state):
+    if state == 4:
         reward = 1
     else:
         reward = 0
@@ -67,6 +67,30 @@ def get_reward(state, action, next_state):
 # Q-learning algorithm
 def q_learning(num_episodes, epsilon):
     steps = []
+    for episode in range(num_episodes):
+        state = 20  # initial state
+        episode_steps = 0
+        while True:
+            episode_steps += 1
+            action = epsilon_greedy(state, epsilon)
+            next_state = get_next_state(state, action)
+            reward = get_reward(state)
+            
+            if state == 4:
+                Q[state] = 1
+                steps.append(episode_steps)
+                break
+            else:
+                Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma * np.max(Q[next_state]))
+                state = next_state
+                print(next_state)
+    
+    print(Q)
+    print(np.max(Q, axis = 1).reshape(5, 5))
+    print("finished after average {} timesteps".format(np.mean(steps)))
+    return np.mean(steps)
+
+def DQN(num_episodes, epsilon):
     for episode in range(num_episodes):
         state = 20 # initial state
         done = False
@@ -84,6 +108,7 @@ def q_learning(num_episodes, epsilon):
                 done = True
     
     print(Q)
+    print(np.mean(Q, axis = 1))
     print("finished after average {} timesteps".format(np.mean(steps)))
     return np.mean(steps)
 
