@@ -8,31 +8,31 @@ Q = np.full((num_states, num_actions), 0.0)
 # Q[2] = 1  # set the goal state
 
 # Set hyperparameters
-alpha = 0.6  # learning rate
+alpha = 0.8  # learning rate
 gamma = 0.9  # discount factor
 
 # Define ε-greedy policy
 def epsilon_greedy(state, epsilon):
     options = []
     Q_options = []
-    cur_x = state / 3
+    cur_x = state // 3
     cur_y = state % 3
     if cur_x - 1 >= 0:
         options.append(0)
         Q_options.append(Q[state, 0])
     else:
         Q_options.append(-100)
-    if cur_x + 1 <= 2:
+    if cur_y + 1 <= 2:
         options.append(1)
         Q_options.append(Q[state, 1])
     else:
         Q_options.append(-100)
-    if cur_y - 1 >= 0:
+    if cur_x + 1 <= 2:
         options.append(2)
         Q_options.append(Q[state, 2])
     else:
         Q_options.append(-100)
-    if cur_y + 1 <= 2:
+    if cur_y - 1 >= 0:
         options.append(3)
         Q_options.append(Q[state, 3])
     else:
@@ -49,11 +49,11 @@ def get_next_state(state, action):
     if action == 0:
         next_state = state - 3
     elif action == 1:
-        next_state = state + 3
-    elif action == 2:
-        next_state = state - 1
-    elif action == 3:
         next_state = state + 1
+    elif action == 2:
+        next_state = state + 3
+    elif action == 3:
+        next_state = state - 1
     return next_state
 
 # Define function to get the reward
@@ -83,7 +83,7 @@ def q_learning(num_episodes, epsilon):
             else:
                 Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma * np.max(Q[next_state]))
                 state = next_state
-                print(next_state)
+                #print(next_state)
     
     print(Q)
     print(np.max(Q, axis = 1).reshape(3, 3))
