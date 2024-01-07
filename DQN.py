@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from NN import Net
 
 # Initialize Q-table
 num_states = 25
@@ -90,41 +91,73 @@ def q_learning(num_episodes, epsilon):
     print("finished after average {} timesteps".format(np.mean(steps)))
     return np.mean(steps)
 
-def DQN(num_episodes, epsilon):
+def DQN(num_episodes, epsilon, lr, bs):
+    steps = []
+    net = Net(lr, bs)
     for episode in range(num_episodes):
+        print('episode {}'.format(episode))
         state = 20 # initial state
-        done = False
         episode_steps = 0
-        while not done:
+        while True:
             action = epsilon_greedy(state, epsilon)
             next_state = get_next_state(state, action)
-            reward = get_reward(state, action, next_state)
-            Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma * np.max(Q[next_state]))
-            state = next_state
-            print(next_state)
+            reward = get_reward(state)
+
+            x = np.array([state, action])
+            Q_next_state = 0
+            for i in range(4):
+                Q_next_state = max(net([next_state, i]), Q_next_state)
+            if state == 4:
+                Q_next_state = 0
+            y = reward + gamma * Q_next_state
+            net.addSample(x, y)
+            
+            if len(net.dataset.data) < bs:
+                continue
+            if len(net.dataset.data) % bs == 0:
+                net.run_train(1)
+
             episode_steps += 1
             if state == 4:
                 steps.append(episode_steps)
-                done = True
+                break
+            
+            state = next_state
+            # print(next_state)
     
-    print(Q)
-    print(np.mean(Q, axis = 1))
+        for state in range(Q.shape[0]):
+            for action in range(Q.shape[1]):
+                Q[state][action] = net([state, action])
+
+        print(Q)
+        print(np.max(Q, axis = 1).reshape(5, 5))
+    
+    Q.tofile('data/lr_{}_bs_{}.bin'.format(lr, bs))
+    net.plot_loss('figs/lr_{}_bs_{}.pdf'.format(lr, bs))
+    
     print("finished after average {} timesteps".format(np.mean(steps)))
     return np.mean(steps)
 
-# Run Q-learning with different epsilon values
-num_episodes = 1000
-epsilons = [i*0.05 for i in range(1, 21)]
-steps_per_epsilon = []
-for epsilon in epsilons:
-    steps = q_learning(num_episodes, epsilon)
-    steps_per_epsilon.append(steps)
+if __name__ == '__main__':
+    # Run Q-learning with different epsilon values
+    num_episodes = 100
+    # epsilons = [i * 0.05 for i in range(1, 21)]
+    epsilons = [0.6]
+    lr = [1e-1, 1e-2, 1e-3, 1e-4]
+    bs = [1]
+    steps_per_epsilon = []
+    for epsilon in epsilons:
+        for _lr in lr:
+            for _bs in bs:
+                # steps = q_learning(num_episodes, epsilon)
+                steps = DQN(num_episodes, epsilon, _lr, _bs)
+                steps_per_epsilon.append(steps)
 
-# Plot the graph
-plt.figure(figsize=(10, 6))
-plt.plot(epsilons, steps_per_epsilon, marker="o")
-plt.title("Q-Learning: Steps for Different Epsilon Values (Learning Rate: {})".format(alpha))
-plt.xlabel("ε")
-plt.ylabel("Steps")
-plt.legend()
-plt.show()
+    # Plot the graph
+    plt.figure(figsize=(10, 6))
+    plt.plot(epsilons, steps_per_epsilon, marker="o")
+    plt.title("Q-Learning: Steps for Different Epsilon Values (Learning Rate: {})".format(alpha))
+    plt.xlabel("ε")
+    plt.ylabel("Steps")
+    plt.legend()
+    plt.show()
